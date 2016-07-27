@@ -1,0 +1,38 @@
+#!/bin/sh
+# vim: set ft=sh
+
+set -e
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+source $(dirname $0)/common.sh
+
+source=$1
+
+if [ -z "$source" ]; then
+  echo "usage: $0 <path/to/source>" >&2
+  exit 1
+fi
+
+payload=$(mktemp $TMPDIR/gerrit-change-resource-request.XXXXXX)
+
+cat > $payload <&0
+
+set_path_for_jq $payload
+load_pubkey $payload
+parse_common_variables $payload
+verified=$(jq -r '.params.verified // "+1"' < $payload)
+
+cd $source
+version=$(git rev-parse HEAD)
+
+ssh -p $port "$url" gerrit review --verified $verified $version
+
+echo -n '{
+  "version": { "ref": "'"$version"'" },
+  "metadata": [
+    { "name": "commit", "value": "'"$version"'" },
+    { "name": "verified", "value": "'"$verified"'" }
+  ]
+}' >&3

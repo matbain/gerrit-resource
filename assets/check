@@ -1,0 +1,37 @@
+#!/bin/sh
+# vim: set ft=sh
+
+set -e
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+source $(dirname $0)/common.sh
+
+payload=$TMPDIR/gerrit-change-resource-request
+
+cat > $payload <&0
+echo $payload
+
+set_path_for_jq $payload
+load_pubkey $payload
+parse_common_variables $payload
+last_version=$(jq -r '.version.ref // ""' < $payload)
+
+query="status:open"
+append_to_query() {
+    if [ -n "$2" ]; then
+        query="$query $1:$2"
+    fi
+}
+append_to_query branch $branch
+append_to_query project $project
+
+if [ -n "$last_version" ]; then
+    last_time=$(ssh -p $port "$url" gerrit query $query commit:$last_version --format text --current-patch-set | grep '^    createdOn' | cut -d ':' -f 2-)
+    append_to_query since $last_time
+fi
+
+result=$(ssh -p $port "$url" gerrit query $query --format json --current-patch-set | jq -s 'sort_by(.currentPatchSet.createdOn) | .[].currentPatchSet.revision | select(. != null)' | jq -s 'map({ref: .})')
+echo "$result"
+echo "$result" >&3
