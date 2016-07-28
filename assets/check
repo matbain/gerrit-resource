@@ -41,7 +41,7 @@ echo "uri=$uri"
 
 configure_git_global "${git_config_payload}"
 
-destination=$TMPDIR/git-resource-repo-cache
+destination=$TMPDIR/gerrit-resource-repo-cache
 
 if [ -d $destination ]; then
   cd $destination
