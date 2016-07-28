@@ -1,7 +1,7 @@
 export TMPDIR=${TMPDIR:-/tmp}
 
 load_pubkey() {
-  local private_key_path=$TMPDIR/gerrit-change-resource-private-key
+  local private_key_path=$TMPDIR/gerrit-resource-private-key
 
   (jq -r '.source.private_key // empty' < $1) > $private_key_path
 
@@ -116,20 +116,4 @@ configure_credentials() {
   if [ "$username" != "" -a "$password" != "" ]; then
     echo "default login $username password $password" > $HOME/.netrc
   fi
-}
-
-set_path_for_jq() {
-    PATH=/usr/local/bin:$PATH
-}
-
-parse_common_variables() {
-    hostname=$(jq -r '.source.hostname // ""' < $1)
-    port=$(jq -r '.source.port // 29418' < $1)
-    project=$(jq -r '.source.project // ""' < $1)
-    branch=$(jq -r '.source.branch // ""' < $1)
-    username=$(jq -r '.source.username // ""' < $1)
-    url="$hostname"
-    if [ -n "$username" ]; then
-        url="$username@$url"
-    fi
 }

@@ -15,19 +15,26 @@ if [ -z "$source" ]; then
   exit 1
 fi
 
-payload=$(mktemp $TMPDIR/gerrit-change-resource-request.XXXXXX)
+# for jq
+PATH=/usr/local/bin:$PATH
+
+payload=$(mktemp $TMPDIR/gerrit-resource-request.XXXXXX)
 
 cat > $payload <&0
 
-set_path_for_jq $payload
 load_pubkey $payload
-parse_common_variables $payload
+
+branch=$(jq -r '.source.branch // ""' < $1)
+hostname=$(jq -r '.source.hostname // ""' < $1)
+port=$(jq -r '.source.port // 29418' < $1)
+project=$(jq -r '.source.project // ""' < $1)
+username=$(jq -r '.source.username // ""' < $1)
 verified=$(jq -r '.params.verified // "+1"' < $payload)
 
 cd $source
 version=$(git rev-parse HEAD)
 
-ssh -p $port "$url" gerrit review --verified $verified $version
+ssh $hostname -p $port -l $username gerrit review --verified $verified $version
 
 echo -n '{
   "version": { "ref": "'"$version"'" },

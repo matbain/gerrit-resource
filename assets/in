@@ -18,7 +18,7 @@ fi
 # for jq
 PATH=/usr/local/bin:$PATH
 
-payload=$(mktemp $TMPDIR/git-resource-request.XXXXXX)
+payload=$(mktemp $TMPDIR/gerrit-resource-request.XXXXXX)
 
 cat > $payload <&0
 echo < $payload
@@ -26,8 +26,16 @@ echo < $payload
 load_pubkey $payload
 configure_git_ssl_verification $payload
 configure_credentials $payload
-parse_common_variables $payload
 
+branch=$(jq -r '.source.branch // ""' < $1)
+hostname=$(jq -r '.source.hostname // ""' < $1)
+port=$(jq -r '.source.port // 29418' < $1)
+project=$(jq -r '.source.project // ""' < $1)
+username=$(jq -r '.source.username // ""' < $1)
+url="$hostname"
+if [ -n "$username" ]; then
+    url="$username@$url"
+fi
 uri="ssh://$url:$port/$project.git"
 
 git_config_payload=$(jq -r '.source.git_config // []' < $payload)
@@ -58,7 +66,7 @@ git clone --single-branch $depthflag $uri $branchflag $destination
 
 cd $destination
 
-git fetch -q origin +refs/changes/*:refs/changes/*
+# git fetch -q origin +refs/changes/*:refs/changes/*
 git checkout -q $ref
 git lfs fetch
 git lfs checkout
@@ -73,6 +81,7 @@ elif [ "$submodules" != "none" ]; then
     git submodule update --init $depthflag --recursive $submodule
   done
 fi
+git submodule foreach "git lfs fetch && git lfs checkout"
 
 for branch in $fetch; do
   git fetch origin $branch

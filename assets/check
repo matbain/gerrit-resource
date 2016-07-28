@@ -8,30 +8,38 @@ exec 1>&2 # redirect all output to stderr for logging
 
 source $(dirname $0)/common.sh
 
-payload=$TMPDIR/gerrit-change-resource-request
+# for jq
+PATH=/usr/local/bin:$PATH
+
+payload=$TMPDIR/gerrit-resource-request
 
 cat > $payload <&0
 echo $payload
 
-set_path_for_jq $payload
 load_pubkey $payload
-parse_common_variables $payload
-last_version=$(jq -r '.version.ref // ""' < $payload)
 
+hostname=$(jq -r '.source.hostname // ""' < $1)
+port=$(jq -r '.source.port // 29418' < $1)
+username=$(jq -r '.source.username // ""' < $1)
+project=$(jq -r '.source.project // ""' < $1)
+branch=$(jq -r '.source.branch // ""' < $1)
+ref=$(jq -r '.version.ref // ""' < $payload)
+
+# Check for any open changes that have been made to the project
 query="status:open"
 append_to_query() {
     if [ -n "$2" ]; then
         query="$query $1:$2"
     fi
 }
-append_to_query branch $branch
-append_to_query project $project
+append_to_query 'branch' $branch
+append_to_query 'project' $project
 
-if [ -n "$last_version" ]; then
-    last_time=$(ssh -p $port "$url" gerrit query $query commit:$last_version --format text --current-patch-set | grep '^    createdOn' | cut -d ':' -f 2-)
-    append_to_query since $last_time
+if [ -n "$ref" ]; then
+    last_time=$(ssh $hostname -p $port -l $username gerrit query $query commit:$ref --format=TEXT --current-patch-set | grep '^    createdOn' | cut -d ':' -f 2-)
+    append_to_query 'since' $last_time
 fi
 
-result=$(ssh -p $port "$url" gerrit query $query --format json --current-patch-set | jq -s 'sort_by(.currentPatchSet.createdOn) | .[].currentPatchSet.revision | select(. != null)' | jq -s 'map({ref: .})')
+result=$(ssh $hostname -p $port -l $username gerrit query $query --format=JSON --current-patch-set | jq -s 'sort_by(.currentPatchSet.createdOn) | .[].currentPatchSet.revision | select(. != null)' | jq -s 'map({ref: .})')
 echo "$result"
 echo "$result" >&3
