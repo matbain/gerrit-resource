@@ -16,8 +16,8 @@ payload=$TMPDIR/gerrit-resource-request
 cat > $payload <&0
 
 load_pubkey $payload
-configure_git_ssl_verification $payload
-configure_credentials $payload
+# configure_git_ssl_verification $payload
+# configure_credentials $payload
 
 hostname=$(jq -r '.source.hostname // ""' < $payload)
 port=$(jq -r '.source.port // 29418' < $payload)
