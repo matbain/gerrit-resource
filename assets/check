@@ -18,8 +18,8 @@ echo "1=$1"
 cat > $payload <&0
 
 load_pubkey $payload
-# configure_git_ssl_verification $payload
-# configure_credentials $payload
+configure_git_ssl_verification $payload
+configure_credentials $payload
 
 hostname=$(jq -r '.source.hostname // ""' < $payload)
 port=$(jq -r '.source.port // 29418' < $payload)
@@ -39,7 +39,7 @@ if [ -n "$username" ]; then
 fi
 uri="ssh://$url:$port/$project.git"
 echo "uri=$uri"
-#ssh://malston@192.168.99.103:29418/malston/concourse-ci-demo
+#ssh://malston@192.168.99.104:29418/malston/concourse-ci-demo
 
 # configure_git_global "${git_config_payload}"
 

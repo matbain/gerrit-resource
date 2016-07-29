@@ -1,0 +1,12 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source: {repository: malston/gerrit-resource}
+
+inputs:
+- name: gerrit-resource
+
+run:
+  path: gerrit-resource/test/all.sh
