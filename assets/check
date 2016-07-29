@@ -16,7 +16,8 @@ payload=$TMPDIR/gerrit-resource-request
 cat > $payload <&0
 
 echo $payload
-echo $1
+echo "payload=$payload"
+echo "1=$1"
 
 load_pubkey $payload
 # configure_git_ssl_verification $payload
