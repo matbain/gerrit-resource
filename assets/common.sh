@@ -17,6 +17,8 @@ load_pubkey() {
     cat > ~/.ssh/config <<EOF
 StrictHostKeyChecking no
 LogLevel quiet
+Host 192.168.99.104
+    KexAlgorithms +diffie-hellman-group1-sha1
 EOF
     chmod 0600 ~/.ssh/config
   fi
