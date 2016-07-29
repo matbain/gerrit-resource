@@ -12,12 +12,10 @@ source $(dirname $0)/common.sh
 PATH=/usr/local/bin:$PATH
 
 payload=$TMPDIR/gerrit-resource-request
-
-cat > $payload <&0
-
-echo $payload
 echo "payload=$payload"
 echo "1=$1"
+
+cat > $payload <&0
 
 load_pubkey $payload
 # configure_git_ssl_verification $payload
