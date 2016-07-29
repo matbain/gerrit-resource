@@ -15,6 +15,9 @@ payload=$TMPDIR/gerrit-resource-request
 
 cat > $payload <&0
 
+echo $payload
+echo $1
+
 load_pubkey $payload
 # configure_git_ssl_verification $payload
 # configure_credentials $payload
@@ -39,60 +42,60 @@ uri="ssh://$url:$port/$project.git"
 echo "uri=$uri"
 #ssh://malston@192.168.99.103:29418/malston/concourse-ci-demo
 
-configure_git_global "${git_config_payload}"
+# configure_git_global "${git_config_payload}"
 
-destination=$TMPDIR/gerrit-resource-repo-cache
-
-if [ -d $destination ]; then
-  cd $destination
-  git fetch
-  git reset --hard FETCH_HEAD
-else
-  branchflag=""
-  if [ -n "$branch" ]; then
-    branchflag="--branch $branch"
-  fi
-
-  git clone --single-branch $uri $branchflag $destination
-  cd $destination
-fi
-
-if [ -n "$ref" ] && git cat-file -e "$ref"; then
-  init_commit=$(git rev-list --max-parents=0 HEAD)
-  if [ "${ref}" = "${init_commit}" ]; then
-    log_range="--reverse HEAD"
-  else
-    log_range="--reverse ${ref}~1..HEAD"
-  fi
-else
-  log_range="-1"
-fi
-
-if [ $paths = '.' ] && [ -z $ignore_paths ]; then
-  paths_search=""
-else
-  paths_search="-- $paths $ignore_paths"
-fi
-
-ci_skip=""
-if [ "$skip_ci_disabled" != "true" ]; then
-  ci_skip="--grep \\[ci\sskip\\] --invert-grep"
-fi
-
-if [ -n "$tag_filter" ]; then
-  {
-    if [ -n "$ref" ]; then
-      result=$(git tag --list '$tag_filter' --sort=creatordate --contains $ref) | jq -R '.' | jq -s "map({ref: .})"
-    else
-      result=$(git tag --list '$tag_filter' --sort=creatordate | tail -1) | jq -R '.' | jq -s "map({ref: .})"
-    fi
-  }
-else
-  {
-    result=$(git log $ci_skip --format='%H' $log_range $paths_search) | jq -R '.' | jq -s "map({ref: .})"
-  }
-fi
-echo "$result"
+# destination=$TMPDIR/gerrit-resource-repo-cache
+#
+# if [ -d $destination ]; then
+#   cd $destination
+#   git fetch
+#   git reset --hard FETCH_HEAD
+# else
+#   branchflag=""
+#   if [ -n "$branch" ]; then
+#     branchflag="--branch $branch"
+#   fi
+#
+#   git clone --single-branch $uri $branchflag $destination
+#   cd $destination
+# fi
+#
+# if [ -n "$ref" ] && git cat-file -e "$ref"; then
+#   init_commit=$(git rev-list --max-parents=0 HEAD)
+#   if [ "${ref}" = "${init_commit}" ]; then
+#     log_range="--reverse HEAD"
+#   else
+#     log_range="--reverse ${ref}~1..HEAD"
+#   fi
+# else
+#   log_range="-1"
+# fi
+#
+# if [ $paths = '.' ] && [ -z $ignore_paths ]; then
+#   paths_search=""
+# else
+#   paths_search="-- $paths $ignore_paths"
+# fi
+#
+# ci_skip=""
+# if [ "$skip_ci_disabled" != "true" ]; then
+#   ci_skip="--grep \\[ci\sskip\\] --invert-grep"
+# fi
+#
+# if [ -n "$tag_filter" ]; then
+#   {
+#     if [ -n "$ref" ]; then
+#       result=$(git tag --list '$tag_filter' --sort=creatordate --contains $ref) | jq -R '.' | jq -s "map({ref: .})"
+#     else
+#       result=$(git tag --list '$tag_filter' --sort=creatordate | tail -1) | jq -R '.' | jq -s "map({ref: .})"
+#     fi
+#   }
+# else
+#   {
+#     result=$(git log $ci_skip --format='%H' $log_range $paths_search) | jq -R '.' | jq -s "map({ref: .})"
+#   }
+# fi
+# echo "$result"
 
 # Check for any open changes that have been made to the project
 query="status:open"
@@ -103,13 +106,13 @@ append_to_query() {
 }
 append_to_query 'branch' $branch
 append_to_query 'project' $project
-gerrit="ssh -p $port $url gerrit"
+# gerrit="ssh -p $port $url gerrit"
 
 if [ -n "$ref" ]; then
-    last_time=$($gerrit query $query commit:$ref --format=TEXT --current-patch-set | grep '^    createdOn' | cut -d ':' -f 2-)
+    last_time=$(ssh -p $port $url gerrit query $query commit:$ref --format=TEXT --current-patch-set | grep '^    createdOn' | cut -d ':' -f 2-)
     append_to_query 'since' $last_time
 fi
 
-result=$($gerrit query $query --format=JSON --current-patch-set | jq -s 'sort_by(.currentPatchSet.createdOn) | .[].currentPatchSet.revision | select(. != null)' | jq -s 'map({ref: .})')
+result=$(ssh -p $port $url gerrit query $query --format=JSON --current-patch-set | jq -s 'sort_by(.currentPatchSet.createdOn) | .[].currentPatchSet.revision | select(. != null)' | jq -s 'map({ref: .})')
 echo "$result"
 echo "$result" >&3
