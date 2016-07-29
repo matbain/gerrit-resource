@@ -20,8 +20,8 @@ init_repo() {
 
     cd $(mktemp -d $TMPDIR/repo.XXXXXX)
 
-    # git init -q
-    git clone ssh://malston@192.168.99.104:29418/malston/concourse-ci-demo.git
+    git init -q
+    # git clone ssh://malston@192.168.99.104:29418/malston/concourse-ci-demo.git
 
     # start with an initial commit
     git \
