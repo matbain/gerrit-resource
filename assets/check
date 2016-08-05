@@ -12,7 +12,7 @@ source $(dirname $0)/common.sh
 PATH=/usr/local/bin:$PATH
 
 payload=$TMPDIR/gerrit-resource-request
-echo "payload=$payload"
+echo "payload=$(cat $payload)"
 # echo "1=$1"
 
 cat > $payload <&0
@@ -21,6 +21,8 @@ load_pubkey $payload
 configure_git_ssl_verification $payload
 configure_credentials $payload
 
+uri=$(jq -r '.source.uri // ""' < $payload)
+echo "uri := $uri"
 hostname=$(jq -r '.source.hostname // ""' < $payload)
 port=$(jq -r '.source.port // 29418' < $payload)
 username=$(jq -r '.source.username // ""' < $payload)
@@ -33,11 +35,13 @@ tag_filter=$(jq -r '.source.tag_filter // ""' < $payload)
 git_config_payload=$(jq -r '.source.git_config // []' < $payload)
 ref=$(jq -r '.version.ref // ""' < $payload)
 skip_ci_disabled=$(jq -r '.source.disable_ci_skip // false' < $payload)
-url="$hostname"
-if [ -n "$username" ]; then
-    url="$username@$url"
+if [ -n "$hostname" ]; then
+  url="$hostname"
+  if [ -n "$username" ]; then
+      url="$username@$url"
+  fi
+  uri="ssh://$url:$port/$project.git"
 fi
-uri="ssh://$url:$port/$project.git"
 echo "uri=$uri"
 #ssh://malston@192.168.99.104:29418/malston/concourse-ci-demo
 
