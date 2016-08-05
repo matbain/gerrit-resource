@@ -14,31 +14,62 @@ run() {
   echo ""
 }
 
+load_pubkey() {
+  local private_key_path=$1
+
+  if [ -s $private_key_path ]; then
+    chmod 0600 $private_key_path
+    mkdir -p ~/.ssh
+    cat > ~/.ssh/config <<EOF
+StrictHostKeyChecking no
+LogLevel quiet
+Host 192.168.99.100
+    KexAlgorithms +diffie-hellman-group1-sha1
+EOF
+    chmod 0600 ~/.ssh/config
+
+    eval $(ssh-agent) >/dev/null 2>&1
+    trap "kill $SSH_AGENT_PID" 0
+
+    SSH_ASKPASS=${resource_dir}/askpass.sh DISPLAY= ssh-add $private_key_path >/dev/null
+  fi
+}
+
 init_repo() {
   (
     set -e
 
-    cd $(mktemp -d $TMPDIR/repo.XXXXXX)
+    cd $(mktemp -d $TMPDIR/XXXXXX)
 
-    git init -q
-    # git clone ssh://malston@192.168.99.104:29418/malston/concourse-ci-demo.git
+    # local project=$(basename "$PWD")
+    # cd ..
+    # rm -rf $project
+    # ssh -p 29418 malston@192.168.99.100 gerrit create-project demo-project --empty-commit
+
+    git clone ssh://malston@192.168.99.100:29418/demo-project
+
+    cd demo-project
+    gitdir=$(git rev-parse --git-dir); scp -p -P 29418 malston@192.168.99.100:hooks/commit-msg ${gitdir}/hooks/
+    # TFILE="testfile$$.txt"
+    # date > $TFILE
+    # git add $TFILE
 
     # start with an initial commit
-    git \
-      -c user.name='test' \
-      -c user.email='test@example.com' \
-      commit -q --allow-empty -m "init"
+    # git commit -q -m "My pretty test commit"
 
     # create some bogus branch
-    git checkout -b bogus
+    # git checkout -b bogus
 
-    git \
-      -c user.name='test' \
-      -c user.email='test@example.com' \
-      commit -q --allow-empty -m "commit on other branch"
+    # git commit -q -m "commit on other branch"
+
+    # push to a gerrit virtual branch for bogus (virtual branches are for: "code review before submission to branch")
+    # git push origin HEAD:refs/for/bogus
 
     # back to master
-    git checkout master
+    # git checkout master
+
+    # push to a gerrit virtual branch for master
+    # git push origin HEAD:refs/for/master
 
     # print resulting repo
     pwd
@@ -73,10 +104,9 @@ make_commit_to_file_on_branch() {
   # modify file and commit
   echo x >> $repo/$file
   git -C $repo add $file
-  git -C $repo \
-    -c user.name='test' \
-    -c user.email='test@example.com' \
-    commit -q -m "commit $(wc -l $repo/$file) $msg"
+  git -C $repo commit -q -m "commit $(wc -l $repo/$file) $msg"
+
+  git -C $repo push origin HEAD:refs/for/master
 
   # output resulting sha
   git -C $repo rev-parse HEAD
@@ -125,6 +155,18 @@ check_uri() {
   jq -n "{
     source: {
       uri: $(echo $1 | jq -R .)
+    }
+  }" | ${resource_dir}/check | tee /dev/stderr
+}
+
+check_gerrit_resource() {
+  jq -n "{
+    source: {
+      uri: $(echo $1 | jq -R .),
+      hostname: $(echo $2 | jq -R .),
+      project: $(echo $3 | jq -R .),
+      username: $(echo $4 | jq -R .),
+      private_key: $(cat $5 | jq -s -R .)
     }
   }" | ${resource_dir}/check | tee /dev/stderr
 }
