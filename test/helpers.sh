@@ -16,6 +16,7 @@ run() {
 
 load_pubkey() {
   local private_key_path=$1
+  local hostname=$2
 
   if [ -s $private_key_path ]; then
     chmod 0600 $private_key_path
@@ -23,7 +24,7 @@ load_pubkey() {
     cat > ~/.ssh/config <<EOF
 StrictHostKeyChecking no
 LogLevel quiet
-Host 192.168.99.100
+Host $hostname
     KexAlgorithms +diffie-hellman-group1-sha1
 EOF
     chmod 0600 ~/.ssh/config
@@ -41,15 +42,17 @@ init_repo() {
 
     cd $(mktemp -d $TMPDIR/XXXXXX)
 
-    # local project=$(basename "$PWD")
+    local hostname=$1
+    local project=$2
+    local username=$3
     # cd ..
     # rm -rf $project
-    # ssh -p 29418 malston@192.168.99.100 gerrit create-project demo-project --empty-commit
+    # ssh -p 29418 $username@$hostname gerrit create-project $project --empty-commit
 
-    git clone ssh://malston@192.168.99.100:29418/demo-project
+    git clone ssh://$username@$hostname:29418/$project
 
-    cd demo-project
-    gitdir=$(git rev-parse --git-dir); scp -p -P 29418 malston@192.168.99.100:hooks/commit-msg ${gitdir}/hooks/
+    cd $project
+    gitdir=$(git rev-parse --git-dir); scp -p -P 29418 $username@$hostname:hooks/commit-msg ${gitdir}/hooks/
     # TFILE="testfile$$.txt"
     # date > $TFILE
     # git add $TFILE

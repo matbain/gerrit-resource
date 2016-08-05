@@ -35,14 +35,15 @@ SwFv3la35Vxvq7lp/u2ghTGrIZw5pKU6J5WjrHvQj1gz8Uwm7Qk3inF8N1/FHK38
 vWXXjZIG5w5Ik6NjO8/B5GTfCR14j7jqfis9IDvg/RknVtuFAokjng==
 -----END RSA PRIVATE KEY-----
 EOF
-  load_pubkey $private_key_path
-
-  local repo=$(init_repo)
-  local ref=$(make_commit $repo)
+  local hostname="192.168.99.100"
   local project="demo-project"
   local username="malston"
+  load_pubkey $private_key_path $hostname
 
-  check_gerrit_resource $repo "192.168.99.100" $project $username $private_key_path | jq -e "
+  local repo=$(init_repo $hostname $project $username)
+  local ref=$(make_commit $repo)
+
+  check_gerrit_resource $repo $hostname $project $username $private_key_path | jq -e "
     . == [{ref: $(echo $ref | jq -R .)}]
   "
 }

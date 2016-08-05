@@ -2,11 +2,11 @@ export TMPDIR=${TMPDIR:-/tmp}
 
 load_pubkey() {
   local private_key_path=$TMPDIR/gerrit-resource-private-key
-
   (jq -r '.source.private_key // empty' < $1) > $private_key_path
 
   if [ -s $private_key_path ]; then
     chmod 0600 $private_key_path
+    hostname=$(jq -r '.source.hostname // ""' < $1)
 
     eval $(ssh-agent) >/dev/null 2>&1
     trap "kill $SSH_AGENT_PID" 0
@@ -17,7 +17,7 @@ load_pubkey() {
     cat > ~/.ssh/config <<EOF
 StrictHostKeyChecking no
 LogLevel quiet
-Host 192.168.99.100
+Host $hostname
     KexAlgorithms +diffie-hellman-group1-sha1
 EOF
     chmod 0600 ~/.ssh/config
