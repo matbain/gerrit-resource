@@ -64,7 +64,7 @@ git clone --single-branch $depthflag $uri $branchflag $destination
 
 cd $destination
 
-# git fetch -q origin +refs/changes/*:refs/changes/*
+git fetch -q origin +refs/changes/*:refs/changes/*
 git checkout -q $ref
 git lfs fetch
 git lfs checkout
