@@ -18,11 +18,13 @@ load_pubkey $payload
 configure_git_ssl_verification $payload
 configure_credentials $payload
 
+# Fetch metadata from JSON
 uri=$(jq -r '.source.uri // ""' < $payload)
 hostname=$(jq -r '.source.hostname // ""' < $payload)
 port=$(jq -r '.source.port // 29418' < $payload)
 username=$(jq -r '.source.username // ""' < $payload)
 project=$(jq -r '.source.project // ""' < $payload)
+query=$(jq -r '.source.query // "status:open"' < $payload)
 branch=$(jq -r '.source.branch // ""' < $payload)
 status=$(jq -r '.source.status // "open"' < $payload)
 paths="$(jq -r '(.source.paths // ["."])[]' < $payload)" # those "'s are important
@@ -31,6 +33,8 @@ tag_filter=$(jq -r '.source.tag_filter // ""' < $payload)
 git_config_payload=$(jq -r '.source.git_config // []' < $payload)
 ref=$(jq -r '.version.ref // ""' < $payload)
 skip_ci_disabled=$(jq -r '.source.disable_ci_skip // false' < $payload)
+
+# Format URL
 if [ -n "$hostname" ]; then
   url="$hostname"
   if [ -n "$username" ]; then
@@ -92,18 +96,6 @@ else
     result=$(git log $ci_skip --format='%H' $log_range $paths_search) | jq -R '.' | jq -s "map({ref: .})"
   }
 fi
-# echo "$result"
-
-# Check for any open changes that have been made to the project
-query="status:$status"
-append_to_query() {
-    if [ -n "$2" ]; then
-        query="$query $1:$2"
-    fi
-}
-append_to_query 'branch' $branch
-append_to_query 'project' $project
-# gerrit="ssh -p $port $url gerrit"
 
 if [ -n "$ref" ]; then
     last_time=$(ssh -p $port $url gerrit query $query commit:$ref --format=TEXT --current-patch-set | grep '^    createdOn' | cut -d ':' -f 2-)
