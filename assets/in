@@ -93,6 +93,6 @@ else
 fi
 
 jq -n "{
-  version: {ref: $(echo $return_ref | jq -R .)},
+version: {ref: $(echo $return_ref | jq -R .), project: $(echo $project | jq -R .)},
   metadata: $(git_metadata)
 }" >&3
