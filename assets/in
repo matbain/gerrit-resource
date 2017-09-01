@@ -34,7 +34,7 @@ fetch=$(jq -r '(.params.fetch // [])[]' < $payload)
 submodules=$(jq -r '(.params.submodules // "all")' < $payload)
 hostname=$(jq -r '.source.hostname // ""' < $payload)
 port=$(jq -r '.source.port // 29418' < $payload)
-project=$(jq -r '.source.project // ""' < $payload)
+project=$(jq -r '.version.project // ""' < $payload)
 username=$(jq -r '.source.username // ""' < $payload)
 url="$hostname"
 if [ -n "$username" ]; then

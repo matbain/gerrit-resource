@@ -33,5 +33,6 @@ if [ -n "$hostname" ]; then
   fi
 fi
 
-result=$(ssh -p $port $url gerrit query $query --format=JSON --current-patch-set | jq -s 'sort_by(.currentPatchSet.createdOn) | .[].currentPatchSet.revision | select(. != null)' | jq -s 'map({ref: .})')
+query_result=$(ssh -p $port $url gerrit query $query --format=JSON --current-patch-set)
+result=$(echo $query_result | jq '{ref:.currentPatchSet.revision | select(. != null), project}' | jq -s 'map(.)')
 echo "$result" >&3
