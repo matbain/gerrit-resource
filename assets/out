@@ -37,7 +37,7 @@ project=$(git remote show origin -n | grep "Fetch URL:" | sed -E 's#^.*/(.*)$#\1
 ssh $hostname -p $port -l $username gerrit review --verified $verified $version
 
 echo -n '{
-  "version": { "ref": "'"$version"'", project: "'"$project"'" },
+  "version": { "ref": "'"$version"'", "project": "'"$project"'" },
   "metadata": [
     { "name": "commit", "value": "'"$version"'" },
     { "name": "verified", "value": "'"$verified"'" }
