@@ -28,18 +28,19 @@ hostname=$(jq -r '.source.hostname // ""' < $payload)
 port=$(jq -r '.source.port // 29418' < $payload)
 username=$(jq -r '.source.username // ""' < $payload)
 repository=$(jq -r '.params.repository // ""' < $payload)
-verified=$(jq -r '.params.verified // "0"' < $payload)
+label=$(jq -r '.params.label // "verified"' < $payload)
+label_value=$(jq -r '.params.label_value // "0"' < $payload)
 
 cd $source/$repository
 version=$(git rev-parse HEAD)
 project=$(git remote show origin -n | grep "Fetch URL:" | sed -E 's#^.*/(.*)$#\1#' | sed 's#.git$##')
 
-ssh $hostname -p $port -l $username gerrit review --verified $verified $version
+ssh $hostname -p $port -l $username gerrit review --label $label=$label_value $version
 
 echo -n '{
   "version": { "ref": "'"$version"'", "project": "'"$project"'" },
   "metadata": [
     { "name": "commit", "value": "'"$version"'" },
-    { "name": "verified", "value": "'"$verified"'" }
+    { "name": "'"$label"'", "value": "'"$label_value"'" }
   ]
 }' >&3
