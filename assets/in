@@ -37,9 +37,9 @@ port=$(jq -r '.source.port // 29418' < $payload)
 project=$(jq -r '.version.project // ""' < $payload)
 username=$(jq -r '.source.username // ""' < $payload)
 url="$hostname"
-if [ -n "$username" ]; then
-    url="$username@$url"
-fi
+# if [ -n "$username" ]; then
+#     url="$username@$url"
+# fi
 uri="ssh://$url:$port/$project.git"
 
 configure_git_global "${git_config_payload}"
