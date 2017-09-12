@@ -61,8 +61,6 @@ if test "$depth" -gt 0 2> /dev/null; then
 fi
 
 export GIT_SSH_COMMAND="ssh -l $username"
-echo $GIT_SSH_COMMAND
-
 git clone --single-branch $depthflag $uri $branchflag $destination
 
 cd $destination
